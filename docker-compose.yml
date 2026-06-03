@@ -1,0 +1,27 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: drdoc-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage    # named volume, not a path
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+
+
+
+#  docker compose down
+#  rm -rf ./qdrant_storage    # deletes all Qdrant data
+#  docker compose up -d       # starts fresh with empty storage
+# Stop Qdrant
+#  docker compose down
+#
+#  # Stop AND delete all data (fresh start)
+#  docker compose down -v
+#
+#  # Restart
+#  docker compose restart
