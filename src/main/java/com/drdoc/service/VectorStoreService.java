@@ -118,7 +118,7 @@ public class VectorStoreService {
                     .setQuery(nearest(denseList))           // dense: List<Float>
                     .setUsing("dense")
                     .setFilter(filter)
-                    .setLimit(limit * 2)
+                    .setLimit(limit * 2L)
                     .build();
 
             // Sparse prefetch
@@ -126,7 +126,7 @@ public class VectorStoreService {
                     .setQuery(nearest(sparseValues, sparseIndices))  // sparse: values + indices
                     .setUsing("sparse")
                     .setFilter(filter)
-                    .setLimit(limit * 2)
+                    .setLimit(limit * 2L)
                     .build();
 
             // RRF fusion query
