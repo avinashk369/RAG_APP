@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -25,7 +26,7 @@ public class QuestionAnswerService {
     private final EmbeddingService embeddingService;
     private final VectorStoreService vectorStoreService;
     private final ChatModel chatModel;
-
+    private final BM25Tokenizer bm25Tokenizer;
 
     // =========================
     // Ask Question
@@ -59,7 +60,9 @@ public class QuestionAnswerService {
             // Retrieve Chunks
             // =========================
 
-            List<EmbeddingMatch<TextSegment>> matches = vectorStoreService.search(queryEmbedding, 8, documentId);
+            Map<Integer, Float> sparseWeights = bm25Tokenizer.computeSparseVector(searchQuery);
+            List<EmbeddingMatch<TextSegment>> matches = vectorStoreService.hybridSearch(
+                    queryEmbedding, sparseWeights, 8, documentId);
             if (matches.isEmpty()) {
                 return AskResponseDto.builder()
                         .answer("No relevant information found.")

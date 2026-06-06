@@ -1,14 +1,10 @@
 package com.drdoc.config;
 
 import io.qdrant.client.QdrantClient;
-
-import io.qdrant.client.grpc.Collections;
-
+import io.qdrant.client.grpc.Collections.*;
 import jakarta.annotation.PostConstruct;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,19 +23,41 @@ public class QdrantInitializer {
     @PostConstruct
     public void initializeCollection() {
         try {
-            log.info("INITIALIZER STARTED");
-            List<String> collections = qdrantClient.listCollectionsAsync().get();
-            boolean exists = collections.contains(collectionName);
+            log.info("INITIALIZER STARTED - connecting to Qdrant...");
 
-            if (!exists) {
-                qdrantClient.createCollectionAsync(collectionName, Collections.VectorParams.newBuilder().setSize(768).setDistance(Collections.Distance.Cosine).build()).get();
-                log.info("Collection created: {}", collectionName);
-            } else {
+            List<String> collections = qdrantClient.listCollectionsAsync().get();
+
+            if (collections.contains(collectionName)) {
                 log.info("Collection already exists: {}", collectionName);
+                return;
             }
 
+            // Dense + Sparse named vector config
+            CreateCollection request = CreateCollection.newBuilder()
+                    .setCollectionName(collectionName)
+                    .setVectorsConfig(
+                            VectorsConfig.newBuilder()
+                                    .setParamsMap(
+                                            VectorParamsMap.newBuilder()
+                                                    .putMap("dense", VectorParams.newBuilder()
+                                                            .setSize(768)
+                                                            .setDistance(Distance.Cosine)
+                                                            .build())
+                                                    .build())
+                                    .build())
+                    .setSparseVectorsConfig(
+                            SparseVectorConfig.newBuilder()
+                                    .putMap("sparse", SparseVectorParams.newBuilder()
+                                            .build())
+                                    .build())
+                    .build();
+
+            qdrantClient.createCollectionAsync(request).get();
+            log.info("Collection created with dense + sparse vectors: {}", collectionName);
+
         } catch (Exception e) {
-            log.error("COLLECTION CREATION FAILED", e);
+            log.error("FAILED TO CONNECT TO QDRANT — is it running? Check: docker compose up -d", e);
+            throw new RuntimeException("Qdrant is not available", e);
         }
     }
 }
